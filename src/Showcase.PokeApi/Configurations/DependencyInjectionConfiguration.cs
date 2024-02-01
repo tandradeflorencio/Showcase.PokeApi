@@ -18,8 +18,11 @@ namespace Showcase.PokeApi.Configurations
         {
             services.AddHttpClient<IHttpClientService, HttpClientService>().SetHandlerLifetime(TimeSpan.FromMinutes(30)).AddPolicyHandler(ObterPoliticaDeRetentativas());
 
+            services.AddSingleton<ICapturadoRepository, CapturadoRepository>();
+            services.AddSingleton<IMestreRepository, MestreRepository>();
+
+            services.AddSingleton<IMestreService, MestreService>();
             services.AddSingleton<IPokemonService, PokemonService>();
-            services.AddSingleton<IPokemonRepository, PokemonRepository>();
             services.AddSingleton<ITelemetriaService, TelemetriaService>();
 
             return services;

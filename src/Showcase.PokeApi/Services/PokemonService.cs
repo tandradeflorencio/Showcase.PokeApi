@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Showcase.PokeApi.Models;
+using Showcase.PokeApi.Models.Entities;
 using Showcase.PokeApi.Models.Requests;
 using Showcase.PokeApi.Models.Responses;
 using Showcase.PokeApi.Repositories.Interfaces;
@@ -25,19 +26,16 @@ namespace Showcase.PokeApi.Services
 
         private readonly IHttpClientService _httpClientService;
 
-        private readonly ITelemetriaService _telemetriaService;
-
         private readonly IConfiguration _configuration;
 
-        private readonly IPokemonRepository _pokemonRepository;
+        private readonly ICapturadoRepository _capturadoRepository;
 
-        public PokemonService(ILogger logger, IHttpClientService httpClientService, ITelemetriaService telemetriaService, IConfiguration configuration, IPokemonRepository transacaoRepository)
+        public PokemonService(ILogger logger, IHttpClientService httpClientService, IConfiguration configuration, ICapturadoRepository capturadoRepository)
         {
             _httpClientService = httpClientService;
             _logger = logger;
-            _telemetriaService = telemetriaService;
             _configuration = configuration;
-            _pokemonRepository = transacaoRepository;
+            _capturadoRepository = capturadoRepository;
         }
 
         public async Task<ListaDePokemonsResponse> ListarAsync()
@@ -77,13 +75,13 @@ namespace Showcase.PokeApi.Services
 
         public async Task<BaseResponse> ObterAsync(int identificador)
         {
-            const int valorDeIdentificadorMinimo = 1;
+            const int ValorDeIdentificadorMinimo = 1;
 
             try
             {
                 _logger.Information($"{PrefixoLog} ({nameof(ObterAsync)}) ({identificador}) Recebida nova requisição.");
 
-                if (identificador < valorDeIdentificadorMinimo)
+                if (identificador < ValorDeIdentificadorMinimo)
                     return new BaseResponse
                     {
                         StatusCode = StatusCodes.Status400BadRequest,
@@ -137,14 +135,98 @@ namespace Showcase.PokeApi.Services
             }
         }
 
-        public Task<BaseResponse> InserirCapturadoAsync(int identificador)
+        public async Task<BaseResponse> InserirCapturadoAsync(int identificador)
         {
-            throw new NotImplementedException();
+            const int ValorDeIdentificadorMinimo = 1;
+
+            try
+            {
+                _logger.Information($"{PrefixoLog} ({nameof(InserirCapturadoAsync)}) ({identificador}) Recebida nova requisição.");
+
+                if (identificador < ValorDeIdentificadorMinimo)
+                    return new BaseResponse
+                    {
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Mensagem = "Identificador inválido."
+                    };
+
+                var uri = $"{_configuration.GetValue<string>("PokeApi:UrlApi")}pokemon/{identificador}";
+
+                var retorno = await _httpClientService.EnviarAsync(uri, HttpMethod.Get);
+                BaseResponse respostaInserir = null;
+
+                if (retorno != null)
+                {
+                    var resposta = await retorno.Content.ReadAsStringAsync();
+
+                    if (retorno.IsSuccessStatusCode)
+                    {
+                        var detalhe = JsonSerializer.Deserialize<Models.Responses.PokeApi.PokemonDetalheResponse>(resposta);
+
+                        var capturado = Capturado.Mapear(detalhe);
+
+                        await _capturadoRepository.InicializarTabelaAsync();
+                        var linhasAfetadas = await _capturadoRepository.InserirAsync(capturado);
+
+                        if (linhasAfetadas > 0)
+                        {
+                            respostaInserir = PokemonResponse.Mapear(detalhe);
+                            respostaInserir.StatusCode = StatusCodes.Status201Created;
+                        }
+                    }
+                }
+
+                if (respostaInserir == null)
+                    return new BaseResponse
+                    {
+                        StatusCode = StatusCodes.Status400BadRequest,
+                        Mensagem = "Identificador inválido."
+                    };
+
+                return respostaInserir;
+            }
+            catch (Exception ex)
+            {
+                _logger.Information($"{PrefixoLog} ({nameof(InserirCapturadoAsync)}) Erro: ({ex.Message})");
+
+                return new BaseResponse
+                {
+                    StatusCode = StatusCodes.Status422UnprocessableEntity,
+                    Mensagem = "Não foi possível processar a requisição. Por favor, tente novamente após alguns segundos."
+                };
+            }
         }
 
-        public Task<ListaDePokemonsResponse> ListarCapturadosAsync(PaginacaoRequest requisicao)
+        public async Task<ListaDePokemonsResponse> ListarCapturadosAsync(PaginacaoRequest requisicao)
         {
-            throw new NotImplementedException();
+            try
+            {
+                _logger.Information($"{PrefixoLog} ({nameof(ListarCapturadosAsync)}) Recebida nova requisição. ({JsonSerializer.Serialize(requisicao)})");
+
+                await _capturadoRepository.InicializarTabelaAsync();
+
+                var capturados = await _capturadoRepository.ListarAsync();
+
+                var resposta = new ListaDePokemonsResponse
+                {
+                    StatusCode = StatusCodes.Status200OK
+                };
+
+                foreach (var item in capturados)
+                    resposta.Pokemons.Add(PokemonResponse.Mapear(item));
+
+                return resposta;
+            }
+            catch (Exception ex)
+            {
+                _logger.Information($"{PrefixoLog} ({nameof(ListarCapturadosAsync)}) Erro: ({ex.Message})");
+
+                return new ListaDePokemonsResponse
+                {
+                    StatusCode = StatusCodes.Status422UnprocessableEntity,
+                    Mensagem = "Não foi possível processar a requisição. Por favor, tente novamente após alguns segundos."
+                };
+            }
         }
 
         private async Task ListarAsync(List<PokemonResponse> listaDePokemons, int quantidadeDePokemons)
@@ -231,6 +313,6 @@ namespace Showcase.PokeApi.Services
             }
 
             return quantidadeDePokemons;
-        }        
+        }
     }
 }

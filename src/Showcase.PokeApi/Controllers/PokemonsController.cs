@@ -59,7 +59,7 @@ namespace Showcase.PokeApi.Controllers
 
         /// <summary>
         /// Adiciona um pokémon na lista de capturados
-        /// </summary>        
+        /// </summary>
         [HttpPut("{identificador}/capturados")]
         [ProducesResponseType(typeof(BaseResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(BaseResponse), StatusCodes.Status400BadRequest)]
@@ -76,7 +76,7 @@ namespace Showcase.PokeApi.Controllers
 
         /// <summary>
         /// Lista os pokémons capturados
-        /// </summary>        
+        /// </summary>
         /// <returns>Lista com dados de pokémons capturados</returns>
         [HttpGet("capturados")]
         [ProducesResponseType(typeof(List<PokemonResponse>), StatusCodes.Status200OK)]
@@ -89,7 +89,9 @@ namespace Showcase.PokeApi.Controllers
         {
             var resultado = await _pokemonService.ListarCapturadosAsync(requisicao);
 
-            return new ObjectResult(resultado) { StatusCode = resultado.StatusCode };
+            return !string.IsNullOrEmpty(resultado.Mensagem) ?
+                    new ObjectResult(new { resultado.Mensagem }) { StatusCode = resultado.StatusCode } :
+                    new ObjectResult(resultado.Pokemons) { StatusCode = resultado.StatusCode };
         });
     }
 }

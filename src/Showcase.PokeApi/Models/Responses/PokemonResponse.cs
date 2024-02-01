@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Showcase.PokeApi.Models.Entities;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Showcase.PokeApi.Models.Responses
 {
@@ -9,9 +10,9 @@ namespace Showcase.PokeApi.Models.Responses
 
         public string Nome { get; set; }
 
-        public int Altura { get; set; }
+        public int? Altura { get; set; }
 
-        public int Peso { get; set; }
+        public int? Peso { get; set; }
 
         public string ImagemEmBase64 { get; set; }
 
@@ -26,6 +27,17 @@ namespace Showcase.PokeApi.Models.Responses
                 Altura = item.Altura,
                 Peso = item.Peso,
                 ImagemEmBase64 = item?.Imagens?.PadraoDeFrente
+            };
+        }
+
+        internal static PokemonResponse Mapear(Capturado capturado)
+        {
+            if (capturado == null) return null;
+
+            return new PokemonResponse
+            {
+                Identificador = capturado.IdentificadorDoPokemon,
+                Nome = capturado.NomeDoPokemon
             };
         }
     }

@@ -25,7 +25,7 @@ namespace Showcase.PokeApi.Test.Services
 
         private PokemonService ObterPokemonService()
         {
-            return new PokemonService(_logger, _httpClientService, _telemetriaService, _configuracao, _pokemonRepository);
+            return new PokemonService(_logger, _httpClientService, _configuracao, _capturadoRepository);
         }
     }
 }

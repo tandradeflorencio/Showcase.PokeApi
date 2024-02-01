@@ -18,7 +18,7 @@ namespace Showcase.PokeApi.Test
 
         protected readonly IHttpClientService _httpClientService;
 
-        protected readonly IPokemonRepository _pokemonRepository;
+        protected readonly ICapturadoRepository _capturadoRepository;
 
         protected readonly HttpClient _httpClient;
 
@@ -31,7 +31,7 @@ namespace Showcase.PokeApi.Test
             _fixture = new Fixture();
             _configuracao = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: true, reloadOnChange: true).AddEnvironmentVariables().Build();
             _httpClientService = Substitute.For<IHttpClientService>();
-            _pokemonRepository = Substitute.For<IPokemonRepository>();
+            _capturadoRepository = Substitute.For<ICapturadoRepository>();
             _telemetriaService = Substitute.For<ITelemetriaService>();
 
             _logger = Substitute.For<ILogger>();
