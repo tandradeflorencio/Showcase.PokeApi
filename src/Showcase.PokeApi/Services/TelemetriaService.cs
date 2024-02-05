@@ -4,15 +4,8 @@ using Showcase.PokeApi.Services.Interfaces;
 
 namespace Showcase.PokeApi.Services
 {
-    public class TelemetriaService : ITelemetriaService
+    public class TelemetriaService(TelemetryClient telemetryClient) : ITelemetriaService
     {
-        private readonly TelemetryClient _telemetryClient;
-
-        public TelemetriaService(TelemetryClient telemetryClient)
-        {
-            _telemetryClient = telemetryClient;
-        }
-
         public bool AdicionarMetrica(string nome, double soma = 1)
         {
             if (string.IsNullOrEmpty(nome) || soma <= 0)
@@ -24,7 +17,7 @@ namespace Showcase.PokeApi.Services
                 Sum = soma
             };
 
-            _telemetryClient.TrackMetric(metrica);
+            telemetryClient.TrackMetric(metrica);
 
             return true;
         }

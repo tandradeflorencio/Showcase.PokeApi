@@ -16,33 +16,17 @@ using System.Threading.Tasks;
 
 namespace Showcase.PokeApi.Services
 {
-    public class PokemonService : IPokemonService
+    public class PokemonService(ILogger logger, IHttpClientService httpClientService, IConfiguration configuration, ICapturadoRepository capturadoRepository) : IPokemonService
     {
         private const string PrefixoLog = $"{ConstantesUtil.PrefixoLog}{nameof(PokemonService)} -";
 
         private const int QuantidadeDePokemonsListados = 10;
 
-        private readonly ILogger _logger;
-
-        private readonly IHttpClientService _httpClientService;
-
-        private readonly IConfiguration _configuration;
-
-        private readonly ICapturadoRepository _capturadoRepository;
-
-        public PokemonService(ILogger logger, IHttpClientService httpClientService, IConfiguration configuration, ICapturadoRepository capturadoRepository)
-        {
-            _httpClientService = httpClientService;
-            _logger = logger;
-            _configuration = configuration;
-            _capturadoRepository = capturadoRepository;
-        }
-
         public async Task<ListaDePokemonsResponse> ListarAsync()
         {
             try
             {
-                _logger.Information($"{PrefixoLog} ({nameof(ListarAsync)}) Recebida nova requisição.");
+                logger.Information($"{PrefixoLog} ({nameof(ListarAsync)}) Recebida nova requisição.");
 
                 var quantidadeDePokemons = await ObterQuantidadeAsync();
 
@@ -53,7 +37,7 @@ namespace Showcase.PokeApi.Services
                     await ListarAsync(listaDePokemons, quantidadeDePokemons);
                 }
 
-                _logger.Information($"{PrefixoLog} ({nameof(ListarAsync)}) Encontrados {listaDePokemons.Count} pokémons.");
+                logger.Information($"{PrefixoLog} ({nameof(ListarAsync)}) Encontrados {listaDePokemons.Count} pokémons.");
 
                 return new ListaDePokemonsResponse
                 {
@@ -63,7 +47,7 @@ namespace Showcase.PokeApi.Services
             }
             catch (Exception ex)
             {
-                _logger.Information($"{PrefixoLog} ({nameof(ListarAsync)}) Erro: ({ex.Message})");
+                logger.Information($"{PrefixoLog} ({nameof(ListarAsync)}) Erro: ({ex.Message})");
 
                 return new ListaDePokemonsResponse
                 {
@@ -79,7 +63,7 @@ namespace Showcase.PokeApi.Services
 
             try
             {
-                _logger.Information($"{PrefixoLog} ({nameof(ObterAsync)}) ({identificador}) Recebida nova requisição.");
+                logger.Information($"{PrefixoLog} ({nameof(ObterAsync)}) ({identificador}) Recebida nova requisição.");
 
                 if (identificador < ValorDeIdentificadorMinimo)
                     return new BaseResponse
@@ -88,9 +72,9 @@ namespace Showcase.PokeApi.Services
                         Mensagem = "Identificador inválido."
                     };
 
-                var uri = $"{_configuration.GetValue<string>("PokeApi:UrlApi")}pokemon/{identificador}";
+                var uri = $"{configuration.GetValue<string>("PokeApi:UrlApi")}pokemon/{identificador}";
 
-                var retorno = await _httpClientService.EnviarAsync(uri, HttpMethod.Get);
+                var retorno = await httpClientService.EnviarAsync(uri, HttpMethod.Get);
                 PokemonResponse pokemon = null;
 
                 if (retorno != null)
@@ -101,7 +85,7 @@ namespace Showcase.PokeApi.Services
                     {
                         var detalhe = JsonSerializer.Deserialize<Models.Responses.PokeApi.PokemonDetalheResponse>(resposta);
 
-                        retorno = await _httpClientService.EnviarAsync(detalhe?.Imagens?.PadraoDeFrente, HttpMethod.Get);
+                        retorno = await httpClientService.EnviarAsync(detalhe?.Imagens?.PadraoDeFrente, HttpMethod.Get);
 
                         if (retorno != null)
                         {
@@ -110,7 +94,7 @@ namespace Showcase.PokeApi.Services
 
                             pokemon = PokemonResponse.Mapear(detalhe);
 
-                            _logger.Information($"{PrefixoLog} ({nameof(ObterAsync)}) ({identificador}) Pokémon {pokemon.Nome} encontrado.");
+                            logger.Information($"{PrefixoLog} ({nameof(ObterAsync)}) ({identificador}) Pokémon {pokemon.Nome} encontrado.");
                         }
                     }
                 }
@@ -125,7 +109,7 @@ namespace Showcase.PokeApi.Services
             }
             catch (Exception ex)
             {
-                _logger.Information($"{PrefixoLog} ({nameof(ObterAsync)}) Erro: ({ex.Message})");
+                logger.Information($"{PrefixoLog} ({nameof(ObterAsync)}) Erro: ({ex.Message})");
 
                 return new BaseResponse
                 {
@@ -141,7 +125,7 @@ namespace Showcase.PokeApi.Services
 
             try
             {
-                _logger.Information($"{PrefixoLog} ({nameof(InserirCapturadoAsync)}) ({identificador}) Recebida nova requisição.");
+                logger.Information($"{PrefixoLog} ({nameof(InserirCapturadoAsync)}) ({identificador}) Recebida nova requisição.");
 
                 if (identificador < ValorDeIdentificadorMinimo)
                     return new BaseResponse
@@ -150,9 +134,9 @@ namespace Showcase.PokeApi.Services
                         Mensagem = "Identificador inválido."
                     };
 
-                var uri = $"{_configuration.GetValue<string>("PokeApi:UrlApi")}pokemon/{identificador}";
+                var uri = $"{configuration.GetValue<string>("PokeApi:UrlApi")}pokemon/{identificador}";
 
-                var retorno = await _httpClientService.EnviarAsync(uri, HttpMethod.Get);
+                var retorno = await httpClientService.EnviarAsync(uri, HttpMethod.Get);
                 BaseResponse respostaInserir = null;
 
                 if (retorno != null)
@@ -165,8 +149,8 @@ namespace Showcase.PokeApi.Services
 
                         var capturado = Capturado.Mapear(detalhe);
 
-                        await _capturadoRepository.InicializarTabelaAsync();
-                        var linhasAfetadas = await _capturadoRepository.InserirAsync(capturado);
+                        await capturadoRepository.InicializarTabelaAsync();
+                        var linhasAfetadas = await capturadoRepository.InserirAsync(capturado);
 
                         if (linhasAfetadas > 0)
                         {
@@ -187,7 +171,7 @@ namespace Showcase.PokeApi.Services
             }
             catch (Exception ex)
             {
-                _logger.Information($"{PrefixoLog} ({nameof(InserirCapturadoAsync)}) Erro: ({ex.Message})");
+                logger.Information($"{PrefixoLog} ({nameof(InserirCapturadoAsync)}) Erro: ({ex.Message})");
 
                 return new BaseResponse
                 {
@@ -201,11 +185,11 @@ namespace Showcase.PokeApi.Services
         {
             try
             {
-                _logger.Information($"{PrefixoLog} ({nameof(ListarCapturadosAsync)}) Recebida nova requisição. ({JsonSerializer.Serialize(requisicao)})");
+                logger.Information($"{PrefixoLog} ({nameof(ListarCapturadosAsync)}) Recebida nova requisição. ({JsonSerializer.Serialize(requisicao)})");
 
-                await _capturadoRepository.InicializarTabelaAsync();
+                await capturadoRepository.InicializarTabelaAsync();
 
-                var capturados = await _capturadoRepository.ListarAsync();
+                var capturados = await capturadoRepository.ListarAsync();
 
                 var resposta = new ListaDePokemonsResponse
                 {
@@ -219,7 +203,7 @@ namespace Showcase.PokeApi.Services
             }
             catch (Exception ex)
             {
-                _logger.Information($"{PrefixoLog} ({nameof(ListarCapturadosAsync)}) Erro: ({ex.Message})");
+                logger.Information($"{PrefixoLog} ({nameof(ListarCapturadosAsync)}) Erro: ({ex.Message})");
 
                 return new ListaDePokemonsResponse
                 {
@@ -233,9 +217,9 @@ namespace Showcase.PokeApi.Services
         {
             var offSet = ObterOffSet(quantidadeDePokemons);
 
-            var uri = $"{_configuration.GetValue<string>("PokeApi:UrlApi")}pokemon?limit={QuantidadeDePokemonsListados}&offset={offSet}";
+            var uri = $"{configuration.GetValue<string>("PokeApi:UrlApi")}pokemon?limit={QuantidadeDePokemonsListados}&offset={offSet}";
 
-            var retorno = await _httpClientService.EnviarAsync(uri, HttpMethod.Get);
+            var retorno = await httpClientService.EnviarAsync(uri, HttpMethod.Get);
 
             if (retorno != null)
             {
@@ -251,7 +235,7 @@ namespace Showcase.PokeApi.Services
                     {
                         tasks.Add(Task.Run(async () =>
                         {
-                            retorno = await _httpClientService.EnviarAsync(item.Url, HttpMethod.Get);
+                            retorno = await httpClientService.EnviarAsync(item.Url, HttpMethod.Get);
 
                             if (retorno != null)
                             {
@@ -261,7 +245,7 @@ namespace Showcase.PokeApi.Services
                                 {
                                     var detalhe = JsonSerializer.Deserialize<Models.Responses.PokeApi.PokemonDetalheResponse>(resposta);
 
-                                    retorno = await _httpClientService.EnviarAsync(detalhe?.Imagens?.PadraoDeFrente, HttpMethod.Get);
+                                    retorno = await httpClientService.EnviarAsync(detalhe?.Imagens?.PadraoDeFrente, HttpMethod.Get);
 
                                     if (retorno != null)
                                     {
@@ -297,9 +281,9 @@ namespace Showcase.PokeApi.Services
         private async Task<int> ObterQuantidadeAsync()
         {
             var quantidadeDePokemons = 0;
-            var uri = $"{_configuration.GetValue<string>("PokeApi:UrlApi")}pokemon?limit=1&offset=1";
+            var uri = $"{configuration.GetValue<string>("PokeApi:UrlApi")}pokemon?limit=1&offset=1";
 
-            var retorno = await _httpClientService.EnviarAsync(uri, HttpMethod.Get);
+            var retorno = await httpClientService.EnviarAsync(uri, HttpMethod.Get);
 
             if (retorno != null)
             {

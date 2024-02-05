@@ -10,15 +10,8 @@ namespace Showcase.PokeApi.Controllers
 {
     [ApiVersion("1")]
     [Route("api/v{version:apiVersion}/[controller]")]
-    public class MestresController : BaseController
+    public class MestresController(ILogger logger, IMestreService mestreService) : BaseController(logger)
     {
-        private readonly IMestreService _mestreService;
-
-        public MestresController(ILogger logger, IMestreService mestreService) : base(logger)
-        {
-            _mestreService = mestreService;
-        }
-
         /// <summary>
         /// Adiciona um mestre pokémon
         /// </summary>
@@ -32,7 +25,7 @@ namespace Showcase.PokeApi.Controllers
         public async Task<IActionResult> InserirAsync([FromBody] InserirMestreRequest requisicao) =>
         await TratarResultadoAsync(async () =>
         {
-            var resultado = await _mestreService.InserirAsync(requisicao);
+            var resultado = await mestreService.InserirAsync(requisicao);
 
             return new ObjectResult(resultado) { StatusCode = resultado.StatusCode };
         });

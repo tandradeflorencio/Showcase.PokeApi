@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Polly.CircuitBreaker;
 using Serilog;
 using Showcase.PokeApi.Models;
+using Showcase.PokeApi.Services;
+using Showcase.PokeApi.Utils;
 using System;
 using System.Threading.Tasks;
 
@@ -10,15 +12,9 @@ namespace Showcase.PokeApi.Controllers
 {
     [ApiController]
     [Produces("application/json")]
-    public class BaseController : ControllerBase
+    public class BaseController(ILogger logger) : ControllerBase
     {
-        private readonly string _prefixoLog = "Showcase.PokeApi -";
-
-        protected readonly ILogger _logger;
-
-        private readonly string MensagemErroPadrao = "Ocorreu um erro ao processar a solicitação. Por favor, tente novamente mais tarde.";
-
-        protected BaseController(ILogger logger) => _logger = logger;
+        private const string PrefixoLog = $"{ConstantesUtil.PrefixoLog}{nameof(BaseController)} -";
 
         protected async Task<IActionResult> TratarResultadoAsync(Func<Task<IActionResult>> servico)
         {
@@ -28,13 +24,13 @@ namespace Showcase.PokeApi.Controllers
             }
             catch (BrokenCircuitException ex)
             {
-                _logger.Error(ex, $"{_prefixoLog} {ex.Message} {ex.StackTrace}");
+                logger.Error(ex, $"{PrefixoLog} {ex.Message} {ex.StackTrace}");
                 return StatusCode(StatusCodes.Status502BadGateway, new BaseResponse { Mensagem = "Quantidade de requisições extrapoladas ou parceiro indiponível." });
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, $"{_prefixoLog} {ex.Message} {ex.StackTrace}");
-                return StatusCode(StatusCodes.Status500InternalServerError, new BaseResponse { Mensagem = MensagemErroPadrao });
+                logger.Error(ex, $"{PrefixoLog} {ex.Message} {ex.StackTrace}");
+                return StatusCode(StatusCodes.Status500InternalServerError, new BaseResponse { Mensagem = ConstantesUtil.MensagemErroPadrao });
             }
         }
     }

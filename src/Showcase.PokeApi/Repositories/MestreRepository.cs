@@ -10,15 +10,8 @@ using System.Threading.Tasks;
 namespace Showcase.PokeApi.Repositories
 {
     [ExcludeFromCodeCoverage]
-    public class MestreRepository : IMestreRepository
+    public class MestreRepository(IConfiguration configuracao) : IMestreRepository
     {
-        private readonly IConfiguration _configuracao;
-
-        public MestreRepository(IConfiguration configuracao)
-        {
-            _configuracao = configuracao;
-        }
-
         public async Task<bool> InicializarTabelaAsync()
         {
             const string command = @"CREATE TABLE IF NOT EXISTS
@@ -29,7 +22,7 @@ namespace Showcase.PokeApi.Repositories
                                         DataDeNascimento TEXT
                                     );";
 
-            using var conexaoSql = new SqliteConnection(_configuracao.GetConnectionString("SQLite"));
+            using var conexaoSql = new SqliteConnection(configuracao.GetConnectionString("SQLite"));
             await conexaoSql.OpenAsync();
 
             var linhasAfetadas = await conexaoSql.ExecuteAsync(command, commandTimeout: 90, commandType: CommandType.Text);
@@ -43,7 +36,7 @@ namespace Showcase.PokeApi.Repositories
                                      VALUES (@Nome, @Documento, @DataDeNascimento)
                                      RETURNING Identificador;";
 
-            using var conexaoSql = new SqliteConnection(_configuracao.GetConnectionString("SQLite"));
+            using var conexaoSql = new SqliteConnection(configuracao.GetConnectionString("SQLite"));
             await conexaoSql.OpenAsync();
 
             var identificador = await conexaoSql.ExecuteScalarAsync<int>(command, entidade, commandTimeout: 90, commandType: CommandType.Text);
@@ -63,7 +56,7 @@ namespace Showcase.PokeApi.Repositories
                                    WHERE    Nome = @Nome
                                             AND Documento = @Documento";
 
-            using var conexaoSql = new SqliteConnection(_configuracao.GetConnectionString("SQLite"));
+            using var conexaoSql = new SqliteConnection(configuracao.GetConnectionString("SQLite"));
             await conexaoSql.OpenAsync();
 
             return await conexaoSql.QueryFirstOrDefaultAsync<Mestre>(query, entidade, commandTimeout: 90, commandType: CommandType.Text);

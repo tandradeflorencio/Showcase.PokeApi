@@ -8,15 +8,8 @@ using System.Threading.Tasks;
 
 namespace Showcase.PokeApi.Services
 {
-    public class HttpClientService : IHttpClientService
+    public class HttpClientService(HttpClient httpClient) : IHttpClientService
     {
-        private readonly HttpClient _httpClient;
-
-        public HttpClientService(HttpClient httpClient)
-        {
-            _httpClient = httpClient;
-        }
-
         public async Task<HttpResponseMessage> EnviarAsync(string uri, HttpMethod metodoHttp, Dictionary<string, string> cabecalhos = null, object dadosDaRequisicao = null)
         {
             using var request = new HttpRequestMessage(metodoHttp, uri);
@@ -29,9 +22,9 @@ namespace Showcase.PokeApi.Services
 
             if (dadosDaRequisicao != null)
                 using (request.Content = new StringContent(JsonSerializer.Serialize(dadosDaRequisicao), Encoding.UTF8, "application/json"))
-                    return await _httpClient.SendAsync(request);
+                    return await httpClient.SendAsync(request);
 
-            return await _httpClient.SendAsync(request);
+            return await httpClient.SendAsync(request);
         }
     }
 }

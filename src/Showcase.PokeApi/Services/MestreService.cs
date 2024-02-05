@@ -13,19 +13,9 @@ using System.Threading.Tasks;
 
 namespace Showcase.PokeApi.Services
 {
-    public class MestreService : IMestreService
+    public class MestreService(ILogger logger, IMestreRepository mestreRepository) : IMestreService
     {
         private const string PrefixoLog = $"{ConstantesUtil.PrefixoLog}{nameof(MestreService)} -";
-
-        private readonly ILogger _logger;
-
-        private readonly IMestreRepository _mestreRepository;
-
-        public MestreService(ILogger logger, IMestreRepository mestreRepository)
-        {
-            _logger = logger;
-            _mestreRepository = mestreRepository;
-        }
 
         public async Task<BaseResponse> InserirAsync(InserirMestreRequest requisicao)
         {
@@ -33,9 +23,9 @@ namespace Showcase.PokeApi.Services
             {
                 const int MinimoValorDeIdentificador = 1;
 
-                _logger.Information($"{PrefixoLog} ({nameof(InserirAsync)}) Recebida nova requisição ({JsonSerializer.Serialize(requisicao)}).");
+                logger.Information($"{PrefixoLog} ({nameof(InserirAsync)}) Recebida nova requisição ({JsonSerializer.Serialize(requisicao)}).");
 
-                var mestre = await _mestreRepository.ObterAsync(Mestre.Mapear(requisicao));
+                var mestre = await mestreRepository.ObterAsync(Mestre.Mapear(requisicao));
 
                 if (mestre != null)
                 {
@@ -48,9 +38,9 @@ namespace Showcase.PokeApi.Services
 
                 mestre = Mestre.Mapear(requisicao);
 
-                await _mestreRepository.InicializarTabelaAsync();
+                await mestreRepository.InicializarTabelaAsync();
 
-                mestre = await _mestreRepository.InserirAsync(mestre);
+                mestre = await mestreRepository.InserirAsync(mestre);
 
                 if (mestre.Identificador < MinimoValorDeIdentificador)
                     return new BaseResponse
@@ -59,7 +49,7 @@ namespace Showcase.PokeApi.Services
                         Mensagem = "Não foi possível processar a requisição. Por favor, tente novamente após alguns segundos."
                     };
 
-                _logger.Information($"{PrefixoLog} ({nameof(InserirAsync)}) ({mestre.Identificador}) Mestre inserido.");
+                logger.Information($"{PrefixoLog} ({nameof(InserirAsync)}) ({mestre.Identificador}) Mestre inserido.");
 
                 var respostaInserir = InserirMestreResponse.Mapear(mestre);
 
@@ -69,7 +59,7 @@ namespace Showcase.PokeApi.Services
             }
             catch (Exception ex)
             {
-                _logger.Information($"{PrefixoLog} ({nameof(InserirAsync)}) Erro: ({ex.Message})");
+                logger.Information($"{PrefixoLog} ({nameof(InserirAsync)}) Erro: ({ex.Message})");
 
                 return new BaseResponse
                 {

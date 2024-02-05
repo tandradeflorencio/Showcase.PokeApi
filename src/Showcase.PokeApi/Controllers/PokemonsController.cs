@@ -12,15 +12,8 @@ namespace Showcase.PokeApi.Controllers
 {
     [ApiVersion("1")]
     [Route("api/v{version:apiVersion}/[controller]")]
-    public class PokemonsController : BaseController
+    public class PokemonsController(ILogger logger, IPokemonService pokemonService) : BaseController(logger)
     {
-        private readonly IPokemonService _pokemonService;
-
-        public PokemonsController(ILogger logger, IPokemonService pokemonService) : base(logger)
-        {
-            _pokemonService = pokemonService;
-        }
-
         /// <summary>
         /// Obtêm uma lista de 10 pokémons aleatórios
         /// </summary>
@@ -32,7 +25,7 @@ namespace Showcase.PokeApi.Controllers
         public async Task<IActionResult> ListarAsync() =>
         await TratarResultadoAsync(async () =>
         {
-            var resultado = await _pokemonService.ListarAsync();
+            var resultado = await pokemonService.ListarAsync();
 
             return !string.IsNullOrEmpty(resultado.Mensagem) ?
                     new ObjectResult(new { resultado.Mensagem }) { StatusCode = resultado.StatusCode } :
@@ -52,7 +45,7 @@ namespace Showcase.PokeApi.Controllers
         public async Task<IActionResult> ObterAsync([FromRoute] int identificador) =>
         await TratarResultadoAsync(async () =>
         {
-            var resultado = await _pokemonService.ObterAsync(identificador);
+            var resultado = await pokemonService.ObterAsync(identificador);
 
             return new ObjectResult(resultado) { StatusCode = resultado.StatusCode };
         });
@@ -69,7 +62,7 @@ namespace Showcase.PokeApi.Controllers
         public async Task<IActionResult> InserirCapturadoAsync([FromRoute] int identificador) =>
         await TratarResultadoAsync(async () =>
         {
-            var resultado = await _pokemonService.InserirCapturadoAsync(identificador);
+            var resultado = await pokemonService.InserirCapturadoAsync(identificador);
 
             return new ObjectResult(resultado) { StatusCode = resultado.StatusCode };
         });
@@ -87,7 +80,7 @@ namespace Showcase.PokeApi.Controllers
         public async Task<IActionResult> ListarCapturadosAsync([FromQuery] PaginacaoRequest requisicao) =>
         await TratarResultadoAsync(async () =>
         {
-            var resultado = await _pokemonService.ListarCapturadosAsync(requisicao);
+            var resultado = await pokemonService.ListarCapturadosAsync(requisicao);
 
             return !string.IsNullOrEmpty(resultado.Mensagem) ?
                     new ObjectResult(new { resultado.Mensagem }) { StatusCode = resultado.StatusCode } :
